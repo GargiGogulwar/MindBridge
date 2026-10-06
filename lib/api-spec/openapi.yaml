@@ -1,0 +1,216 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: ai
+    description: Server-side AI features
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Database unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /livez:
+    get:
+      operationId: livenessCheck
+      tags: [health]
+      summary: Liveness check
+      description: Returns 200 when the API process is running
+      responses:
+        "200":
+          description: API process is running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /ai/status:
+    get:
+      operationId: getAiStatus
+      tags: [ai]
+      summary: Check whether server-side AI is configured
+      responses:
+        "200":
+          description: AI configuration status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIStatus"
+  /ai/chat:
+    post:
+      operationId: createAiChatReply
+      tags: [ai]
+      summary: Get a response from the MindBridge AI companion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIChatInput"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIChatOutput"
+        "400":
+          description: Invalid request
+        "429":
+          description: Too many AI requests
+        "502":
+          description: AI provider request failed
+  /ai/analyze:
+    post:
+      operationId: analyzeMoodEmotion
+      tags: [ai]
+      summary: Analyze a mood entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeEmotionInput"
+      responses:
+        "200":
+          description: Mood analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmotionAnalysis"
+        "400":
+          description: Invalid request
+        "429":
+          description: Too many AI requests
+        "502":
+          description: AI provider request failed
+  /ai/cheer:
+    post:
+      operationId: generateAiCheer
+      tags: [ai]
+      summary: Generate a short wholesome joke or uplifting response
+      responses:
+        "200":
+          description: Cheer response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AICheerOutput"
+        "429":
+          description: Too many AI requests
+        "502":
+          description: AI provider request failed
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    AIStatus:
+      type: object
+      properties:
+        available:
+          type: boolean
+      required: [available]
+    AIChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          maxLength: 4000
+      required: [role, content]
+    AIChatInput:
+      type: object
+      properties:
+        messages:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/AIChatMessage"
+        userMessage:
+          type: string
+          minLength: 1
+          maxLength: 4000
+      required: [messages, userMessage]
+    AIChatOutput:
+      type: object
+      properties:
+        response:
+          type: string
+        sadnessDetected:
+          type: boolean
+          description: Whether the latest user message expresses sadness or emotional pain.
+        crisisDetected:
+          type: boolean
+          description: Whether the latest user message indicates self-harm or immediate safety risk.
+      required: [response, sadnessDetected, crisisDetected]
+    AnalyzeEmotionInput:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        emojis:
+          type: array
+          maxItems: 12
+          items:
+            type: string
+            maxLength: 16
+      required: [text, emojis]
+    EmotionAnalysis:
+      type: object
+      properties:
+        emotion:
+          type: string
+        intensity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        sentiment:
+          type: string
+          enum: [positive, negative, neutral]
+        crisisRisk:
+          type: string
+          enum: [none, low, medium, high]
+        suggestions:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+      required: [emotion, intensity, sentiment, crisisRisk, suggestions, summary]
+    AICheerOutput:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
